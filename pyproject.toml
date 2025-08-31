@@ -15,7 +15,9 @@ authors = [
 ]
 classifiers = []
 dependencies = [
-    "httpx>=0.26",
+    "geojson~=3.2",
+    # "sftpretty~=1.1.9",
+    "xmltodict~=0.14.2",
 ]
 
 [project.urls]
