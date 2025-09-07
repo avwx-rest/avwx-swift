@@ -3,13 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "swift"
+name = "avwx-swift"
 dynamic = ["version"]
 description = "Python connector for the FAA SWIFT data information system"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
-keywords = ["aviation", "weather", "notam"]
+keywords = ["aviation", "weather", "notam", "faa", "swift"]
 authors = [
     { name = "Michael duPont", email = "michael@dupont.dev" },
 ]
@@ -23,14 +23,14 @@ dependencies = [
 ]
 
 [project.urls]
-Issues = "https://github.com/avwx-rest/faa-swift/issues"
-Source = "https://github.com/avwx-rest/faa-swift"
+Issues = "https://github.com/avwx-rest/avwx-swift/issues"
+Source = "https://github.com/avwx-rest/avwx-swift"
 
 [tool.hatch.version]
-path = "swift/__about__.py"
+path = "avwx_swift/__about__.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["swift"]
+packages = ["avwx_swift"]
 
 
 [tool.hatch.envs.types]
@@ -40,7 +40,7 @@ extra-dependencies = [
     "time-machine",
 ]
 [tool.hatch.envs.types.scripts]
-check = "mypy --install-types --non-interactive {args:swift tests}"
+check = "mypy --install-types --non-interactive {args:avwx_swift tests}"
 
 [tool.hatch.envs.hatch-test]
 extra-dependencies = [
@@ -52,14 +52,14 @@ extra-dependencies = [
 
 [tool.pytest.ini_options]
 addopts = """\
-    --cov avwx \
+    --cov avwx_swift \
     --cov tests \
     --cov-report term-missing \
     --no-cov-on-fail \
 """
 
 [tool.coverage.run]
-source_pkgs = ["swift", "tests"]
+source_pkgs = ["avwx_swift", "tests"]
 branch = true
 parallel = true
 omit = []

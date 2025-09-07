@@ -26,16 +26,16 @@ log = logging.getLogger(__name__)
 class JmsConfig:
     """Config values for data push service."""
 
-    username: str  # jms.username
-    password: str  # jms.password
-    queue_name: str  # jms.destination
-    connection_factory: str  # jms.connectionFactory
-    url: str  # jms.providerUrl
-    message_vpn: str  # jms.solace.messageVpn
+    username: str
+    password: str
+    queue_name: str
+    connection_factory: str
+    url: str
+    message_vpn: str
 
-    thread_count: int = 4  # jms.messageProcessor.processingThreads
-    ssl_trust_store: Path = _DEFAULT_CERT_PATH  # jms.solace.sslTrustStore
-    jndi_connection_retries: int = 0  # -1 # jms.solace.jndiConnectionRetries
+    thread_count: int = 4
+    ssl_trust_store: Path = _DEFAULT_CERT_PATH
+    jndi_connection_retries: int = 0  # -1 for infinite retries
 
 
 class JmsService:

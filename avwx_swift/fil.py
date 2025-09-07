@@ -11,7 +11,7 @@ from typing import Any, Self
 import xmltodict
 
 # from sftpretty import Connection
-from swift.notam import Notam
+from avwx_swift.notam import Notam
 
 DATE_FILE = "primary_last_date.txt"
 # TIME_FORMAT = "%Y-%m-%d %H:%M:%S %Z"
