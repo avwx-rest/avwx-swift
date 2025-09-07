@@ -106,14 +106,21 @@ class FilService:
         else:
             return self._update(self.cache_dir, force=force)
 
+    @property
+    def should_update(self) -> bool:
+        """Determine if an update is needed based on server time."""
+        if not self.server_time:
+            msg = "Server time has not been fetched."
+            raise ValueError(msg)
+        if not self.updated:
+            return True
+        return self.updated < self.server_time
+
     def _update(self, target_dir: Path, *, force: bool) -> bool:
         """Update the local cache with the latest data from the SFTP server."""
-        self._fetch_server_time(target_dir)
-        if not force:
-            if not self.server_time:
-                return False
-            if self.updated and self.updated >= self.server_time:
-                return False
+        self.update_server_time(target_dir)
+        if not (force or self.should_update):
+            return False
         self._download(target_dir)
         self._parse(target_dir)
         if self.cache_dir:
@@ -128,13 +135,14 @@ class FilService:
             msg = f"SFTP failed: {result.stderr}"
             raise RuntimeError(msg)
 
-    def _fetch_server_time(self, target_dir: Path) -> None:
-        """Fetch the most recent update time from the SFTP server."""
+    def update_server_time(self, target_dir: Path) -> datetime:
+        """Fetch and return the most recent update time from the SFTP server."""
         path = target_dir / DATE_FILE
         self._get_file(DATE_FILE, path)
         with path.open() as fin:
             self.server_time = datetime.fromisoformat(fin.read().strip()).replace(tzinfo=UTC)
         self.checked = datetime.now(UTC)
+        return self.server_time
 
     def _download(self, target_dir: Path) -> None:
         """Download the FIL file from the SFTP server."""
@@ -143,6 +151,7 @@ class FilService:
 
     def _parse(self, target_dir: Path) -> None:
         """Parse the FIL file and extract NOTAMs."""
+        self.data = []
         path = target_dir / FIL_FILE_NAME
 
         def parse_notam(_: Any, item: dict[str, Any]) -> bool:

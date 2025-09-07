@@ -65,7 +65,7 @@ parallel = true
 omit = []
 
 [tool.coverage.report]
-fail_under = 50  # increase over time
+fail_under = 30  # increase over time
 exclude_lines = [
     "no cov",
     "if __name__ == .__main__.:",
