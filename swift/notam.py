@@ -7,7 +7,7 @@ from datetime import datetime
 from itertools import batched
 from typing import Any, NamedTuple, Self
 
-import geojson
+import geojson  # type: ignore
 from geojson import Point, Polygon
 
 geojson.geometry.DEFAULT_PRECISION = 13
@@ -75,6 +75,7 @@ class TextNotam:
     @classmethod
     def from_fil(cls, data: dict[str, str]) -> Self:
         """Create a TextNotam instance from FIL data."""
+        # try:
         return cls(
             id=data["@id"],
             series=data.get("series"),
@@ -100,6 +101,9 @@ class TextNotam:
             text=data["text"],
             raw=get_raw_text(data["translation"]),  # type: ignore
         )
+        # except KeyError as exc:
+        #     # pprint(data)
+        #     raise ValueError from exc
 
 
 class _Features(NamedTuple):
@@ -157,6 +161,7 @@ class Notam:
     @classmethod
     def from_fil(cls, data: dict[str, Any]) -> Self:
         """Create a Notam instance from FIL data."""
+        # try:
         root = data["hasMember"]
         event: dict[str, Any]
         features = _Features(notes=[], shapes=[])
@@ -186,3 +191,60 @@ class Notam:
             shapes=features.shapes,
             text=TextNotam.from_fil(notam),
         )
+        # except Exception as exc:
+        #     # pprint(data)
+        #     raise ValueError from exc
+
+
+# Worth a second look:
+
+# "RadioFrequencyArea": {
+#     "@id": "RFA01_66789677",
+#     "boundedBy": {
+#       "@nil": "true",
+#       "@xmlns": {
+#         "xsi": "http://www.w3.org/2001/XMLSchema-instance"
+#       }
+#     },
+#     "timeSlice": {
+#       "RadioFrequencyAreaTimeSlice": {
+#         "@id": "RFA01_TS01_66789677",
+#         "extension": {
+#           "RadioFrequencyAreaExtension": {
+#             "@id": "RFAE_EVENT_1_66789677",
+#             "theEvent": {
+#               "@href": "#Event_1_66789677"
+#             }
+#           }
+#         },
+#         "interpretation": "TEMPDELTA",
+#         "sector": {
+#           "CircleSector": {
+#             "@id": "CS01_66789677",
+#             "angleType": "RDL",
+#             "arcDirection": "CWA",
+#             "fromAngle": "228",
+#             "outerDistance": {
+#               "#text": "26",
+#               "@uom": "NM"
+#             },
+#             "toAngle": "284",
+#             "upperLimit": {
+#               "#text": "15900",
+#               "@uom": "FT"
+#             },
+#             "upperLimitReference": "SFC"
+#           }
+#         },
+#         "validTime": {
+#           "TimePeriod": {
+#             "@id": "RFA01_TS02_TP01_66789677",
+#             "beginPosition": "2023-01-05T18:51:00.000Z",
+#             "endPosition": {
+#               "@indeterminatePosition": "unknown"
+#             }
+#           }
+#         }
+#       }
+#     }
+#   },

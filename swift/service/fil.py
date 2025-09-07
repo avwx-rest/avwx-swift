@@ -2,7 +2,6 @@
 
 import json
 import subprocess
-from dataclasses import dataclass
 from datetime import UTC, datetime
 from gzip import GzipFile
 from pathlib import Path
@@ -24,12 +23,6 @@ def _load_dt(value: str | None) -> datetime | None:
     if value is None:
         return None
     return datetime.fromisoformat(value).replace(tzinfo=UTC)
-
-
-@dataclass
-class FilConfig:
-    url: str  # fil.sftp.host
-    cert_path: Path
 
 
 _NAMESPACES = (
@@ -57,10 +50,11 @@ class FilService:
     """Service for interacting with the FIL SFTP server."""
 
     url: str
+    user: str
     cert_path: Path
     cache_dir: Path | None = None
 
-    data: list
+    data: list[Notam]
 
     checked: datetime | None = None
     updated: datetime | None = None
