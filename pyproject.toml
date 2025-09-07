@@ -7,7 +7,7 @@ name = "avwx-swift"
 dynamic = ["version"]
 description = "Python connector for the FAA SWIFT data information system"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license = "MIT"
 keywords = ["aviation", "weather", "notam", "faa", "swift"]
 authors = [
