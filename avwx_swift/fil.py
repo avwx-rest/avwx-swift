@@ -118,7 +118,7 @@ class FilService:
 
     def _update(self, target_dir: Path, *, force: bool) -> bool:
         """Update the local cache with the latest data from the SFTP server."""
-        self.update_server_time(target_dir)
+        self._update_server_time(target_dir)
         if not (force or self.should_update):
             return False
         self._download(target_dir)
@@ -135,7 +135,15 @@ class FilService:
             msg = f"SFTP failed: {result.stderr}"
             raise RuntimeError(msg)
 
-    def update_server_time(self, target_dir: Path) -> datetime:
+    def update_server_time(self) -> datetime:
+        """Fetch and return the most recent update time from the SFTP server."""
+        if self.cache_dir is None:
+            with TemporaryDirectory() as tmpdir:
+                return self._update_server_time(Path(tmpdir))
+        else:
+            return self._update_server_time(self.cache_dir)
+
+    def _update_server_time(self, target_dir: Path) -> datetime:
         """Fetch and return the most recent update time from the SFTP server."""
         path = target_dir / DATE_FILE
         self._get_file(DATE_FILE, path)
