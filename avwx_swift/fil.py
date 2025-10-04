@@ -1,7 +1,6 @@
 """ "Service for interacting with the FIL SFTP server."""
 
 import json
-import subprocess
 from datetime import UTC, datetime
 from gzip import GzipFile
 from pathlib import Path
@@ -9,8 +8,8 @@ from tempfile import TemporaryDirectory
 from typing import Any, Self
 
 import xmltodict
+from sftputil import SFTP
 
-# from sftpretty import Connection
 from avwx_swift.notam import Notam
 
 DATE_FILE = "primary_last_date.txt"
@@ -60,6 +59,8 @@ class FilService:
     updated: datetime | None = None
     server_time: datetime | None = None
 
+    conn: SFTP | None = None
+
     def __init__(self, url: str, user: str, cert_path: Path, cache_dir: Path | None = None) -> None:
         if cache_dir and not cache_dir.exists():
             cache_dir.mkdir(parents=True)
@@ -71,6 +72,10 @@ class FilService:
 
     def __repr__(self) -> str:
         return f"FilService(size={len(self.data)}, checked={self.checked}, updated={self.updated}, server_time={self.server_time})"
+
+    def reload_connection(self) -> None:
+        """Reload the SFTP connection if any connection config changes."""
+        self.conn = SFTP(self.url, self.user, key_file=self.cert_path.as_posix())
 
     def save_cache(self) -> None:
         """Save the current state to the cache directory."""
@@ -92,19 +97,19 @@ class FilService:
 
     def update(self, *, force: bool = False) -> bool:
         """Update the local cache with the latest data from the SFTP server."""
-
-        # NOTE: The OpenSSH key provided by FAA SWIFT is apparently malformed though still works.
-        # It fails sftpretty's pubkey validation steps as it is an RSA key masquerading as ED25519
-        # I'm keeping this line here for future reference in case this is ever fixed. The original
-        # flow was to pass this connection through the update steps. The CMD sftp still works.
-
-        # with Connection(self.url, username=self.user, private_key=self.cert_path.as_posix()) as sftp:
-
         if self.cache_dir is None:
             with TemporaryDirectory() as tmpdir:
                 return self._update(Path(tmpdir), force=force)
         else:
             return self._update(self.cache_dir, force=force)
+
+    def update_server_time(self) -> datetime:
+        """Fetch and return the most recent update time from the SFTP server."""
+        if self.cache_dir is None:
+            with TemporaryDirectory() as tmpdir:
+                return self._update_server_time(Path(tmpdir))
+        else:
+            return self._update_server_time(self.cache_dir)
 
     @property
     def should_update(self) -> bool:
@@ -129,45 +134,33 @@ class FilService:
 
     def _get_file(self, name: str, target: Path) -> None:
         """Download a file from the SFTP server using the command line."""
-        cmd = ["sftp", "-i", str(self.cert_path), f"{self.user}@{self.url}:{name}", str(target)]
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
-        if result.returncode != 0:
-            msg = f"SFTP failed: {result.stderr}"
-            raise RuntimeError(msg)
-
-    def update_server_time(self) -> datetime:
-        """Fetch and return the most recent update time from the SFTP server."""
-        if self.cache_dir is None:
-            with TemporaryDirectory() as tmpdir:
-                return self._update_server_time(Path(tmpdir))
-        else:
-            return self._update_server_time(self.cache_dir)
+        if self.conn is None:
+            self.reload_connection()
+        conn: SFTP = self.conn
+        conn.sync_pull(name, target.as_posix())
 
     def _update_server_time(self, target_dir: Path) -> datetime:
         """Fetch and return the most recent update time from the SFTP server."""
-        path = target_dir / DATE_FILE
-        self._get_file(DATE_FILE, path)
-        with path.open() as fin:
+        self._get_file(DATE_FILE, target_dir)
+        with (target_dir / DATE_FILE).open() as fin:
             self.server_time = datetime.fromisoformat(fin.read().strip()).replace(tzinfo=UTC)
         self.checked = datetime.now(UTC)
         return self.server_time
 
     def _download(self, target_dir: Path) -> None:
         """Download the FIL file from the SFTP server."""
-        path = target_dir / FIL_FILE_NAME
-        self._get_file(FIL_FILE_NAME, path)
+        self._get_file(FIL_FILE_NAME, target_dir)
 
     def _parse(self, target_dir: Path) -> None:
         """Parse the FIL file and extract NOTAMs."""
         self.data = []
-        path = target_dir / FIL_FILE_NAME
 
         def parse_notam(_: Any, item: dict[str, Any]) -> bool:
             self.data.append(Notam.from_fil(item))
             return True  # Indicates that the parser should continue
 
         xmltodict.parse(
-            GzipFile(path),
+            GzipFile(target_dir / FIL_FILE_NAME),
             item_depth=5,
             item_callback=parse_notam,
             process_namespaces=True,
