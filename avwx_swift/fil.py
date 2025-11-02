@@ -136,6 +136,10 @@ class FilService:
         """Download a file from the SFTP server using the command line."""
         if self.conn is None:
             self.reload_connection()
+        # When caching, always overwrite existing files because SFTP won't overwrite
+        local_target = target / name
+        if local_target.exists():
+            local_target.unlink()
         conn: SFTP = self.conn
         conn.sync_pull(name, target.as_posix())
 
