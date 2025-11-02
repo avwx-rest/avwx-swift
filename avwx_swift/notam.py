@@ -35,7 +35,7 @@ def get_raw_text(data: dict | list[dict]) -> str:
         data = next(item for item in data if "formattedText" in item["NOTAMTranslation"])
     raw: str
     try:
-        raw = data["NOTAMTranslation"]["formattedText"]["div"]
+        raw = data["NOTAMTranslation"]["formattedText"]["div"]["#text"]
         # Replace newlines and remove all other HTML tags
         raw = raw.replace("<BR>", "\n")
         raw = re.sub(r"<.*?>", "", raw)
