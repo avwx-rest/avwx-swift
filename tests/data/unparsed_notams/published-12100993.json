@@ -1,0 +1,22 @@
+{
+ "error": "TypeError: string indices must be integers, not 'str'",
+ "status": "PUBLISHED",
+ "properties": {
+  "solace_routing_dest_name": "AIM_NMS/D/PUBLISHED/N/RWY/us_gov_dot_faa_aim_fns_nds_AirspaceUsage",
+  "DEX_SOURCE_TYPE": "AIM_NMS",
+  "Solace_JMS_Prop_IS_Reply_Message": "false",
+  "req_method": "POST",
+  "us_gov_dot_faa_aim_fns_nds_LocationDesignator": "ORD",
+  "uri": "AIM_NMS.IN",
+  "us_gov_dot_faa_aim_fns_nds_CorrelationID": "12100993",
+  "m_msg_nms_id": "3789306300613115",
+  "Forum_Source_JMS_Message_ID": "ID:172.16.90.69b7319f92189def0:578528",
+  "us_gov_dot_faa_aim_fns_nds_NOTAMFunction": "N",
+  "us_gov_dot_faa_aim_fns_nds_AirspaceUsage": "",
+  "us_gov_dot_faa_aim_fns_nds_NOTAMNumber": "08/032",
+  "us_gov_dot_faa_aim_fns_nds_SourceType": "D",
+  "us_gov_dot_faa_aim_fns_nds_NOTAMKeyword": "RWY",
+  "us_gov_dot_faa_aim_fns_nds_NOTAMStatus": "PUBLISHED",
+  "m_msg_last_updated": "2026-08-27 03:19:00 +0000 UTC"
+ }
+}
