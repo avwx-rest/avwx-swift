@@ -1,0 +1,22 @@
+{
+ "error": "TypeError: string indices must be integers, not 'str'",
+ "status": "PUBLISHED",
+ "properties": {
+  "solace_routing_dest_name": "AIM_NMS/I/PUBLISHED/R/OTHER/us_gov_dot_faa_aim_fns_nds_AirspaceUsage",
+  "DEX_SOURCE_TYPE": "AIM_NMS",
+  "Solace_JMS_Prop_IS_Reply_Message": "false",
+  "req_method": "POST",
+  "us_gov_dot_faa_aim_fns_nds_LocationDesignator": "CZVR",
+  "uri": "AIM_NMS.IN",
+  "us_gov_dot_faa_aim_fns_nds_CorrelationID": "12100957",
+  "m_msg_nms_id": "1787800419514000",
+  "Forum_Source_JMS_Message_ID": "ID:172.16.91.21184bb19d8a71a4d60:570035",
+  "us_gov_dot_faa_aim_fns_nds_NOTAMFunction": "R",
+  "us_gov_dot_faa_aim_fns_nds_AirspaceUsage": "",
+  "us_gov_dot_faa_aim_fns_nds_NOTAMNumber": "L4023/26",
+  "us_gov_dot_faa_aim_fns_nds_SourceType": "I",
+  "us_gov_dot_faa_aim_fns_nds_NOTAMKeyword": "OTHER",
+  "us_gov_dot_faa_aim_fns_nds_NOTAMStatus": "PUBLISHED",
+  "m_msg_last_updated": "0001-01-01 00:00:00 +0000 UTC"
+ }
+}

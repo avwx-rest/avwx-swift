@@ -1,0 +1,22 @@
+{
+ "error": "TypeError: string indices must be integers, not 'str'",
+ "status": "PUBLISHED",
+ "properties": {
+  "solace_routing_dest_name": "AIM_NMS/I/PUBLISHED/N/IAP/us_gov_dot_faa_aim_fns_nds_AirspaceUsage",
+  "DEX_SOURCE_TYPE": "AIM_NMS",
+  "Solace_JMS_Prop_IS_Reply_Message": "false",
+  "req_method": "POST",
+  "us_gov_dot_faa_aim_fns_nds_LocationDesignator": "SJU",
+  "uri": "AIM_NMS.IN",
+  "m_msg_nms_id": "1787800769594478",
+  "us_gov_dot_faa_aim_fns_nds_CorrelationID": "12100996",
+  "Forum_Source_JMS_Message_ID": "ID:172.16.90.69b7319f92189def0:578531",
+  "us_gov_dot_faa_aim_fns_nds_NOTAMFunction": "N",
+  "us_gov_dot_faa_aim_fns_nds_AirspaceUsage": "",
+  "us_gov_dot_faa_aim_fns_nds_NOTAMNumber": "A1869/26",
+  "us_gov_dot_faa_aim_fns_nds_SourceType": "I",
+  "us_gov_dot_faa_aim_fns_nds_NOTAMKeyword": "IAP",
+  "us_gov_dot_faa_aim_fns_nds_NOTAMStatus": "PUBLISHED",
+  "m_msg_last_updated": "2026-08-27 03:19:00 +0000 UTC"
+ }
+}
