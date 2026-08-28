@@ -45,9 +45,7 @@ class TestMessageStatus:
 class TestReadMessage:
     def test_a_failure_is_attached_not_raised(self) -> None:
         """One unreadable message must not end a drain, and its payload is worth keeping."""
-        message = read_message(
-            JmsMessage(payload="<nonsense/>", properties={STATUS_PROPERTY: "ACTIVE"})
-        )
+        message = read_message(JmsMessage(payload="<nonsense/>", properties={STATUS_PROPERTY: "ACTIVE"}))
 
         assert message.notam is None
         assert message.error
@@ -89,9 +87,7 @@ class TestKnownUnparsedCorpus:
         path = self.payloads()[0]
         sidecar = json.loads(path.with_suffix(".json").read_text())
 
-        message = read_message(
-            JmsMessage(payload=path.read_text(), properties={STATUS_PROPERTY: sidecar["status"]})
-        )
+        message = read_message(JmsMessage(payload=path.read_text(), properties={STATUS_PROPERTY: sidecar["status"]}))
 
         assert isinstance(message, FnsMessage)
         assert message.notam is None

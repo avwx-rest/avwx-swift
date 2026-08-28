@@ -19,7 +19,7 @@ def make_service(server_time: datetime | None = None, updated: datetime | None =
 def test_should_update_no_server_time() -> None:
     """Should raise if server_time is None."""
     service = make_service(server_time=None, updated=None)
-    with pytest.raises(ValueError, match="Server time has not been fetched."):
+    with pytest.raises(ValueError, match=r"Server time has not been fetched."):
         _ = service.should_update
 
 

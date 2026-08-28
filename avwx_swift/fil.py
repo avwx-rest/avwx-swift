@@ -5,12 +5,18 @@ from datetime import UTC, datetime
 from gzip import GzipFile
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Self
+from typing import Self
 
 import xmltodict
 from sftputil import SFTP
 
 from avwx_swift.notam import Notam
+
+# Mirrors the callback signature xmltodict's type stubs expect for ``item_callback``.
+type _AttrValue = str | dict[str, str]
+type _AttrDict = dict[str, _AttrValue]
+type _ItemPath = list[tuple[str, _AttrDict | None]]
+type _Item = str | _AttrDict | None
 
 DATE_FILE = "primary_last_date.txt"
 # TIME_FORMAT = "%Y-%m-%d %H:%M:%S %Z"
@@ -42,7 +48,7 @@ _NAMESPACES = (
     "http://www.isotc211.org/2005/gmd",
     "http://www.aixm.aero/schema/5.1",
 )
-_NS_MAP = {ns: None for ns in _NAMESPACES}
+_NS_MAP = dict.fromkeys(_NAMESPACES, None)
 
 
 class FilService:
@@ -159,8 +165,9 @@ class FilService:
         """Parse the FIL file and extract NOTAMs."""
         self.data = []
 
-        def parse_notam(_: Any, item: dict[str, Any]) -> bool:
-            self.data.append(Notam.from_fil(item))
+        def parse_notam(_: _ItemPath, item: _Item) -> bool:
+            if isinstance(item, dict):
+                self.data.append(Notam.from_fil(item))
             return True  # Indicates that the parser should continue
 
         xmltodict.parse(
@@ -191,5 +198,5 @@ class FilService:
         obj.checked = _load_dt(attrs["checked"])
         obj.server_time = _load_dt(attrs["server_time"])
         if load_data:
-            obj._parse(cache_dir)  # noqa
+            obj._parse(cache_dir)
         return obj

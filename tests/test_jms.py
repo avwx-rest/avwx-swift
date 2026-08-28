@@ -21,7 +21,8 @@ def clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv(name, raising=False)
 
 
-def test_from_env_reads_the_scds_variable_names(clean_env: None, monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.usefixtures("clean_env")
+def test_from_env_reads_the_scds_variable_names(monkeypatch: pytest.MonkeyPatch) -> None:
     for name, value in REQUIRED.items():
         monkeypatch.setenv(name, value)
 
@@ -32,7 +33,8 @@ def test_from_env_reads_the_scds_variable_names(clean_env: None, monkeypatch: py
     assert config.message_vpn == "AIM_FNS"
 
 
-def test_from_env_names_every_missing_variable(clean_env: None, monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.usefixtures("clean_env")
+def test_from_env_names_every_missing_variable(monkeypatch: pytest.MonkeyPatch) -> None:
     """Reporting only the first would mean five round trips to configure one connection."""
     monkeypatch.setenv("SWIM_USERNAME", "someone")
 
@@ -45,14 +47,16 @@ def test_from_env_names_every_missing_variable(clean_env: None, monkeypatch: pyt
         assert name in message
 
 
-def test_from_env_accepts_a_prefix(clean_env: None, monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.usefixtures("clean_env")
+def test_from_env_accepts_a_prefix(monkeypatch: pytest.MonkeyPatch) -> None:
     for name, value in REQUIRED.items():
         monkeypatch.setenv(name.replace("SWIM_", "FNS_"), value)
 
     assert JmsConfig.from_env(prefix="FNS_").username == "someone"
 
 
-def test_overrides_beat_the_environment(clean_env: None, monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.usefixtures("clean_env")
+def test_overrides_beat_the_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     for name, value in REQUIRED.items():
         monkeypatch.setenv(name, value)
 

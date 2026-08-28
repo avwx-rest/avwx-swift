@@ -134,9 +134,7 @@ def read_message(message: JmsMessage) -> FnsMessage:
             properties=message.properties,
             error=f"{type(exc).__name__}: {exc}",
         )
-    return FnsMessage(
-        status=status, payload=message.payload, properties=message.properties, notam=notam
-    )
+    return FnsMessage(status=status, payload=message.payload, properties=message.properties, notam=notam)
 
 
 class FnsSubscription:
@@ -171,9 +169,7 @@ class FnsSubscription:
     def connect(self) -> None:
         self.service.connect()
 
-    def drain(
-        self, limit: int = DEFAULT_BATCH_SIZE, timeout: int = DEFAULT_IDLE_TIMEOUT
-    ) -> Iterator[FnsMessage]:
+    def drain(self, limit: int = DEFAULT_BATCH_SIZE, timeout: int = DEFAULT_IDLE_TIMEOUT) -> Iterator[FnsMessage]:
         """Yield parsed messages until the queue goes quiet or `limit` is reached."""
         for message in self.service.drain(limit, timeout):
             yield read_message(message)

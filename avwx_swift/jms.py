@@ -30,7 +30,6 @@ import logging
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from types import TracebackType
 from typing import TYPE_CHECKING, Any, Self
 
 import certifi
@@ -48,6 +47,7 @@ from solace.messaging.resources.queue import Queue
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+    from types import TracebackType
 
 log = logging.getLogger(__name__)
 
@@ -218,9 +218,7 @@ class JmsService:
             properties={str(k): str(v) for k, v in (message.get_properties() or {}).items()},
         )
 
-    def drain(
-        self, limit: int = DEFAULT_BATCH_SIZE, timeout: int = DEFAULT_IDLE_TIMEOUT
-    ) -> Iterator[JmsMessage]:
+    def drain(self, limit: int = DEFAULT_BATCH_SIZE, timeout: int = DEFAULT_IDLE_TIMEOUT) -> Iterator[JmsMessage]:
         """Yield up to `limit` messages, stopping early once the queue goes quiet.
 
         Whatever is left stays on the queue — it is durable, so a partial drain defers
