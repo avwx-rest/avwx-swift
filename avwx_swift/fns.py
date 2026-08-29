@@ -11,10 +11,11 @@ snapshot only ever holds active NOTAMs, so a consumer built against `fil` has no
 withdrawal — but over the live feed, a cancellation is the only signal that a NOTAM should
 be removed.
 
-**Not every message parses.** `Notam.from_fil` raises on a substantial share of live
-traffic; the shapes it cannot read are collected in `tests/data/unparsed_notams`. Rather
-than raise mid-drain, `read_message` returns the failure attached to the message so a
-consumer can record it and keep going.
+**A message may still not parse.** The feed defines its own shapes and can introduce new
+ones, so `read_message` returns any failure attached to the message rather than raising
+mid-drain, letting a consumer record it and keep going. A corpus of real messages is kept
+in `tests/data/unparsed_notams` — named for when they could not be read, all of which
+parse now.
 """
 
 from __future__ import annotations

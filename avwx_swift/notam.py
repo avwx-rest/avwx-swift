@@ -28,14 +28,29 @@ def optional_dt(data: str | dict) -> datetime | None:
         return None
 
 
+def get_div_text(div: str | dict) -> str:
+    """Extract the text from a formattedText div.
+
+    The div only becomes a dict when it carries attributes or child elements.
+    A div holding nothing but text, as the SCDS feed sends, is a plain string.
+    """
+    if isinstance(div, dict):
+        text: str = div["#text"]
+        return text
+    return div
+
+
 def get_raw_text(data: dict | list[dict]) -> str:
     """Extract the raw text from the NOTAM data."""
     # If both simple and formatted are given, prefer formatted since it has more data
     if isinstance(data, list):
-        data = next(item for item in data if "formattedText" in item["NOTAMTranslation"])
+        data = next(
+            (item for item in data if "formattedText" in item["NOTAMTranslation"]),
+            data[0],
+        )
     raw: str
     try:
-        raw = data["NOTAMTranslation"]["formattedText"]["div"]["#text"]
+        raw = get_div_text(data["NOTAMTranslation"]["formattedText"]["div"])
         # Replace newlines and remove all other HTML tags
         raw = raw.replace("<BR>", "\n")
         raw = re.sub(r"<.*?>", "", raw)
@@ -106,29 +121,47 @@ class TextNotam:
         #     raise ValueError from exc
 
 
+#: Recorded against geometry taken from a sibling member rather than the NOTAM text.
+INHERITED_NOTE = "Geometry inherited from {}"
+
+
 class _Features(NamedTuple):
     notes: list[str]
     shapes: list[Point | Polygon]
+    #: AIXM members that yielded geometry, in the order they were first seen.
+    sources: list[str]
 
 
-def _extract_features(features: _Features, data: dict[str, Any]) -> None:
-    """Recursively extract specific field types from the data."""
+def _extract_features(
+    features: _Features, data: dict[str, Any], source: str | None = None
+) -> None:
+    """Recursively extract specific field types from the data.
+
+    `source` names the AIXM member being scanned so promoted geometry can be traced back
+    to it; it is recorded once, the first time that member yields a shape.
+    """
+
+    def add_shape(shape: Point | Polygon) -> None:
+        if source and source not in features.sources:
+            features.sources.append(source)
+        features.shapes.append(shape)
+
     for key, val in data.items():
         if isinstance(val, list) and val and isinstance(val[0], dict):
             for item in val:
-                _extract_features(features, item)
+                _extract_features(features, item, source)
         elif isinstance(val, dict):
-            _extract_features(features, val)
+            _extract_features(features, val, source)
         elif not isinstance(val, str):
             continue
         elif key in ("note", "operationalStatus", "status"):
             features.notes.append(val)
         elif key == "pos":
             lat, lon = map(float, val.split(" "))
-            features.shapes.append(Point((lon, lat)))
+            add_shape(Point((lon, lat)))
         elif key == "posList":
             coords = [(lon, lat) for lat, lon in batched(map(float, val.split(" ")), 2)]
-            features.shapes.append(Polygon(coords))
+            add_shape(Polygon(coords))
 
 
 def check_event(item: dict) -> dict | None:
@@ -163,21 +196,39 @@ class Notam:
         """Create a Notam instance from FIL data."""
         # try:
         root = data["hasMember"]
-        event: dict[str, Any]
-        features = _Features(notes=[], shapes=[])
-        if isinstance(root, list):
-            for item in root:
-                if "Event" in item:
-                    if checked_event := check_event(item):
-                        event = checked_event
-                        break
-                else:
-                    _extract_features(features, item)
-        else:
-            event = root["Event"]["timeSlice"]["EventTimeSlice"]
+        members: list[dict[str, Any]] = root if isinstance(root, list) else [root]
+        event: dict[str, Any] | None = None
+        fallback: dict[str, Any] | None = None
+        features = _Features(notes=[], shapes=[], sources=[])
+        for item in members:
+            if "Event" not in item:
+                # Every member is scanned. Stopping at the Event drops the geometry that
+                # the members after it carry, and the Event is normally first.
+                _extract_features(features, item, source=next(iter(item), None))
+                continue
+            if event is not None:
+                continue
+            if checked_event := check_event(item):
+                event = checked_event
+            elif fallback is None:
+                with suppress(KeyError):
+                    fallback = item["Event"]["timeSlice"]["EventTimeSlice"]
+        event = event or fallback
+        if event is None:
+            msg = "No Event member found in the AIXM message"
+            raise ValueError(msg)
         times: dict = event["validTime"]["TimePeriod"]
         notam: dict = event["textNOTAM"]["NOTAM"]
         extension: dict = event["extension"]["EventExtension"]
+        text = TextNotam.from_fil(notam)
+        # A NOTAM's geometry belongs to its text. Sibling members normally just restate
+        # that location - an AirportHeliport reference point is the Q) line coordinate at
+        # higher precision, not new area - so their geometry is promoted only when the
+        # event has location info and the text has none of its own.
+        promoted = not text.coordinates
+        notes = list(features.notes)
+        if promoted:
+            notes += [INHERITED_NOTE.format(source) for source in features.sources]
         return cls(
             id=event["@id"],
             issued=format_dt(notam["issued"]),
@@ -187,9 +238,9 @@ class Notam:
             classification=extension["classification"],
             icao=extension.get("icaoLocation"),
             name=extension.get("airportname"),
-            notes=features.notes,
-            shapes=features.shapes,
-            text=TextNotam.from_fil(notam),
+            notes=notes,
+            shapes=features.shapes if promoted else [],
+            text=text,
         )
         # except Exception as exc:
         #     # pprint(data)
