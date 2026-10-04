@@ -17,7 +17,7 @@ from avwx_swift.fns import (
     read_message,
 )
 from avwx_swift.jms import JmsMessage
-from avwx_swift.notam import INHERITED_NOTE
+from avwx_swift.notam import INHERITED_NOTE, IncompleteNotamError
 
 UNPARSED = Path(__file__).parent / "data" / "unparsed_notams"
 
@@ -243,3 +243,30 @@ class TestCapturedCorpus:
             )
             assert message.is_withdrawal, path.name
             assert message.notam is not None, path.name
+
+
+KNOWN_ISSUES = Path(__file__).parent / "data" / "known_issues"
+
+
+def test_payload_polygons_are_valid_geojson() -> None:
+    notam = parse_payload((KNOWN_ISSUES / "payload-polygon.xml").read_text())
+    polygons = [shape for shape in notam.shapes if shape.type == "Polygon"]
+    assert polygons
+    for polygon in polygons:
+        assert polygon.is_valid, polygon.errors()
+        ring = polygon["coordinates"][0]
+        assert ring[0] == ring[-1]
+
+
+def test_an_incomplete_record_names_the_notam() -> None:
+    payload = (KNOWN_ISSUES / "missing-text.xml").read_text()
+    with pytest.raises(IncompleteNotamError, match="NOTAM_1_1777623811138000 is missing 'text'"):
+        parse_payload(payload)
+
+
+def test_a_missing_effective_end_is_open_ended() -> None:
+    payload = (KNOWN_ISSUES / "missing-text.xml").read_text()
+    payload = payload.replace("<event:effectiveEnd>PERM</event:effectiveEnd>", "")
+    payload = payload.replace("<event:location>", "<event:text>UNKNOWN NOF</event:text><event:location>")
+    notam = parse_payload(payload)
+    assert notam.text.end is None

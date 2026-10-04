@@ -59,6 +59,10 @@ def get_raw_text(data: dict | list[dict]) -> str:
     return raw.strip()
 
 
+class IncompleteNotamError(ValueError):
+    """An AIXM record is missing a field every NOTAM must have."""
+
+
 @dataclass(frozen=True)
 class TextNotam:
     """Represents a textual NOTAM."""
@@ -69,7 +73,7 @@ class TextNotam:
     issued: str
     location: str
     start: str
-    end: str
+    end: str | None
     text: str
     raw: str
     series: str | None
@@ -90,7 +94,14 @@ class TextNotam:
     @classmethod
     def from_fil(cls, data: dict[str, str]) -> Self:
         """Create a TextNotam instance from FIL data."""
-        # try:
+        try:
+            return cls._from_fil(data)
+        except KeyError as exc:
+            msg = f"NOTAM {data.get('@id', '?')} is missing {exc.args[0]!r}"
+            raise IncompleteNotamError(msg) from exc
+
+    @classmethod
+    def _from_fil(cls, data: dict[str, str]) -> Self:
         return cls(
             id=data["@id"],
             series=data.get("series"),
@@ -112,13 +123,10 @@ class TextNotam:
             radius=data.get("radius"),
             location=data["location"],
             start=data["effectiveStart"],
-            end=data["effectiveEnd"],
+            end=data.get("effectiveEnd"),
             text=data["text"],
             raw=get_raw_text(data["translation"]),  # type: ignore
         )
-        # except KeyError as exc:
-        #     # pprint(data)
-        #     raise ValueError from exc
 
 
 #: Recorded against geometry taken from a sibling member rather than the NOTAM text.
@@ -161,7 +169,10 @@ def _extract_features(
             add_shape(Point((lon, lat)))
         elif key == "posList":
             coords = [(lon, lat) for lat, lon in batched(map(float, val.split(" ")), 2)]
-            add_shape(Polygon(coords))
+            if coords and coords[0] != coords[-1]:
+                coords.append(coords[0])
+            # GeoJSON polygon coordinates are a list of rings, not a list of positions.
+            add_shape(Polygon([coords]))
 
 
 def check_event(item: dict) -> dict | None:
