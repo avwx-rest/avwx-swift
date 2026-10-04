@@ -189,6 +189,8 @@ class JmsService:
         """Open the session and bind to the queue."""
         service = MessagingService.builder().from_properties(self.config.as_properties()).build()
         service.connect()
+        # Recorded before the bind, so close() can disconnect it if the bind fails.
+        self._service = service
         # DO_NOT_CREATE: SCDS provisions the queue when it approves the subscription.
         # Creating one here would bind to an empty queue instead of failing, and the feed
         # would look healthy while delivering nothing.
@@ -197,8 +199,12 @@ class JmsService:
             .with_missing_resources_creation_strategy(MissingResourcesCreationStrategy.DO_NOT_CREATE)
             .build(Queue.durable_exclusive_queue(self.config.queue_name))
         )
-        receiver.start()
-        self._service, self._receiver = service, receiver
+        try:
+            receiver.start()
+        except Exception:
+            self.close()
+            raise
+        self._receiver = receiver
         log.debug("Bound to %s on %s", self.config.queue_name, self.config.url)
 
     def receive(self, timeout: int = DEFAULT_IDLE_TIMEOUT) -> JmsMessage | None:
